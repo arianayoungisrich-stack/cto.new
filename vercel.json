@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "api/handler.js": {
+      "runtime": "@vercel/node@latest",
+      "maxDuration": 30
+    }
+  },
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/handler" }
+  ]
+}
