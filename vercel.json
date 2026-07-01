@@ -1,13 +1,7 @@
 {
   "buildCommand": "vite build",
   "installCommand": "bun install",
-  "functions": {
-    "api/handler.mjs": {
-      "runtime": "@vercel/node@3",
-      "maxDuration": 30
-    }
-  },
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api/handler.mjs" }
+    { "source": "/(.*)", "destination": "/api/index" }
   ]
 }
