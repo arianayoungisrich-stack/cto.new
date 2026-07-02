@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Navbar } from "./Navbar";
 import { ContactForm } from "./ContactForm";
 
