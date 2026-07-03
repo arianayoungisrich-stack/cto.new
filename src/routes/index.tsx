@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { readFile } from "node:fs/promises";
 import { Navbar } from "../components/Navbar";
@@ -61,20 +61,6 @@ function Home() {
               <a href="#services" className="px-8 py-4 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold text-lg hover:bg-slate-50 transition-all">
                 See How It Works
               </a>
-            </div>
-            <div className="mt-12 flex flex-wrap justify-center gap-8 text-sm font-semibold text-slate-400">
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                Trusted by 50+ businesses
-              </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                Avg. 3.5x ROI in 90 days
-              </div>
-              <div className="flex items-center gap-2">
-                <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                40% more bookings
-              </div>
             </div>
           </div>
         </div>
@@ -151,18 +137,18 @@ function Home() {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { name: 'Plumbers', href: '/plumbers' },
-              { name: 'HVAC', href: '/hvac' },
-              { name: 'Dentists', href: '/dentists' },
-              { name: 'Law Firms', href: '/law-firms' }
+              { name: 'Plumbers', to: '/industries/plumbers' },
+              { name: 'HVAC', to: '/industries/hvac' },
+              { name: 'Dentists', to: '/industries/dentists' },
+              { name: 'Law Firms', to: '/industries/law-firms' }
             ].map(industry => (
-              <a
+              <Link
                 key={industry.name}
-                href={industry.href}
+                to={industry.to}
                 className="bg-indigo-800/50 p-6 rounded-xl border border-indigo-700 text-center hover:bg-indigo-800 transition-colors block"
               >
                 <span className="font-semibold text-lg">{industry.name}</span>
-              </a>
+              </Link>
             ))}
           </div>
         </div>
@@ -201,27 +187,14 @@ function Home() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Clients Say</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-8">
-            <Testimonial
-              quote="Reply AI transformed how we handle inquiries. We're booking 40% more appointments than we were manually."
-              author="Sarah Jenkins"
-              role="Owner, Bloom Wellness"
-            />
-            <Testimonial
-              quote="The missed-call text-back is a game changer. We've saved dozens of leads that otherwise would've gone to competitors."
-              author="Mike Thompson"
-              role="General Manager, Thompson HVAC"
-            />
-            <Testimonial
-              quote="I was skeptical about AI, but this system is incredibly smart. It qualifies leads better than our front desk did."
-              author="David Chen"
-              role="Partner, Chen & Associates"
-            />
+      <section className="py-24 bg-slate-50/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Case Studies</h2>
+          <p className="text-slate-600 max-w-2xl mx-auto">
+            We are currently onboarding our first cohort of local service businesses. Real client success stories and performance data will be published here as they become available.
+          </p>
+          <div className="mt-8 inline-block px-6 py-3 bg-indigo-50 text-indigo-700 rounded-xl font-medium">
+            Case studies coming soon
           </div>
         </div>
       </section>
@@ -297,8 +270,8 @@ function Home() {
               <a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a>
               <a href="/terms" className="hover:text-white transition-colors">Terms of Service</a>
             </div>
-            <div className="text-sm">
-              Built with <a href="https://cto.new" className="underline hover:text-white">cto.new</a>
+            <div className="text-sm text-slate-600">
+              Converting leads into customers automatically.
             </div>
           </div>
           <div className="mt-8 text-center text-xs">

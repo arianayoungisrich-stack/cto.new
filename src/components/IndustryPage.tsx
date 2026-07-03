@@ -162,8 +162,8 @@ export function IndustryPage({
               <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
               <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
             </div>
-            <div className="text-sm">
-              Built with <a href="https://cto.new" className="underline hover:text-white">cto.new</a>
+            <div className="text-sm text-slate-600">
+              Converting leads into customers automatically.
             </div>
           </div>
           <div className="mt-8 text-xs">

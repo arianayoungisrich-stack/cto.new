@@ -1,5 +1,7 @@
 {
-  "redirects": [
-    { "source": "/(.*)", "destination": "https://662ec25746e3af7659a12328bf26e7a1.ctonew.app/$1", "permanent": true }
+  "buildCommand": "vite build",
+  "installCommand": "bun install",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/api/index" }
   ]
 }

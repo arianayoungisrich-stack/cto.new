@@ -1,5 +1,7 @@
-const server = require('./ssr.js');
+const server = require('../dist/server/server.js');
+
 module.exports = async function handler(req) {
-  const response = await server.fetch(req);
+  const handlerObj = server.default || server;
+  const response = await handlerObj.fetch(req);
   return response;
 };

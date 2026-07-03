@@ -1,21 +1,20 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { dbQuery } from "../utils/db";
 
 const getDashboardData = createServerFn({ method: "GET" }).handler(async () => {
-  const { execSync } = await import("node:child_process");
-  
   try {
-    const submissionsJson = execSync(`team-db "SELECT * FROM contact_submissions ORDER BY created_at DESC"`).toString();
-    const viewsJson = execSync(`team-db "SELECT * FROM page_views ORDER BY view_count DESC"`).toString();
-    const leadsJson = execSync(`team-db "SELECT l.*, p.stage, p.call_scheduled, p.proposal_sent, p.notes as pipeline_notes FROM leads l LEFT JOIN sales_pipeline p ON l.id = p.lead_id ORDER BY l.created_at DESC"`).toString();
-    const proposalsJson = execSync(`team-db "SELECT pr.*, l.business_name FROM proposals pr JOIN leads l ON pr.lead_id = l.id ORDER BY pr.created_at DESC"`).toString();
+    const submissions = await dbQuery("SELECT * FROM contact_submissions ORDER BY created_at DESC");
+    const views = await dbQuery("SELECT * FROM page_views ORDER BY view_count DESC");
+    const leads = await dbQuery("SELECT l.*, p.stage, p.call_scheduled, p.proposal_sent, p.notes as pipeline_notes FROM leads l LEFT JOIN sales_pipeline p ON l.id = p.lead_id ORDER BY l.created_at DESC");
+    const proposals = await dbQuery("SELECT pr.*, l.business_name FROM proposals pr JOIN leads l ON pr.lead_id = l.id ORDER BY pr.created_at DESC");
     
     return {
-      submissions: JSON.parse(submissionsJson),
-      views: JSON.parse(viewsJson),
-      leads: JSON.parse(leadsJson),
-      proposals: JSON.parse(proposalsJson),
+      submissions,
+      views,
+      leads,
+      proposals,
       success: true
     };
   } catch (error) {
@@ -27,14 +26,13 @@ const getDashboardData = createServerFn({ method: "GET" }).handler(async () => {
 const saveProposal = createServerFn({ method: "POST" })
   .validator((data: { leadId: number; content: string }) => data)
   .handler(async ({ data }) => {
-    const { execSync } = await import("node:child_process");
     const escape = (str: string) => str?.replace(/'/g, "''") ?? "";
     const sql = `INSERT INTO proposals (lead_id, content) VALUES (${data.leadId}, '${escape(data.content)}')`;
     const updateSql = `UPDATE sales_pipeline SET stage = 'proposal', proposal_sent = 1 WHERE lead_id = ${data.leadId}`;
     
     try {
-      execSync(`team-db "${sql}"`);
-      execSync(`team-db "${updateSql}"`);
+      await dbQuery(sql);
+      await dbQuery(updateSql);
       return { success: true };
     } catch (error) {
       console.error("Save proposal error:", error);
@@ -45,11 +43,10 @@ const saveProposal = createServerFn({ method: "POST" })
 const updateLeadStage = createServerFn({ method: "POST" })
   .validator((data: { leadId: number; stage: string }) => data)
   .handler(async ({ data }) => {
-    const { execSync } = await import("node:child_process");
     const sql = `UPDATE sales_pipeline SET stage = '${data.stage}', updated_at = datetime('now') WHERE lead_id = ${data.leadId}`;
     
     try {
-      execSync(`team-db "${sql}"`);
+      await dbQuery(sql);
       return { success: true };
     } catch (error) {
       console.error("Update lead stage error:", error);
