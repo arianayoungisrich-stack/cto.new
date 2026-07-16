@@ -1,23 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { readFile } from "node:fs/promises";
 import { IndustryPage } from "../../components/IndustryPage";
 import { incrementPageView } from "../../utils/api";
+import { getBusinessName } from "../../utils/db";
 
-const getBusinessName = createServerFn({ method: "GET" }).handler(async () => {
-  try {
-    const cfg = JSON.parse(await readFile("site.json", "utf8")) as {
-      businessName?: string;
-    };
-    return cfg.businessName?.trim() ?? "Reply AI";
-  } catch {
-    return "Reply AI";
-  }
+const getBusinessNameFn = createServerFn({ method: "GET" }).handler(async () => {
+  return getBusinessName();
 });
 
 export const Route = createFileRoute("/industries/law-firms")({
   loader: async () => {
-    const businessName = await getBusinessName();
+    const businessName = await getBusinessNameFn();
     incrementPageView({ data: "/industries/law-firms" }).catch(() => {});
     return businessName;
   },

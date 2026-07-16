@@ -1,24 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { readFile } from "node:fs/promises";
-import { dbQuery } from "../../utils/db";
+import { dbQuery, getBusinessName } from "../../utils/db";
 
-const getBusinessName = createServerFn({ method: "GET" }).handler(async () => {
-  try {
-    const cfg = JSON.parse(await readFile("site.json", "utf8")) as {
-      businessName?: string;
-    };
-    return cfg.businessName?.trim() ?? "Reply AI";
-  } catch {
-    return "Reply AI";
-  }
+const getBusinessNameFn = createServerFn({ method: "GET" }).handler(async () => {
+  return getBusinessName();
 });
 
 const getBlogPost = createServerFn({ method: "GET" })
   .validator((slug: string) => slug)
   .handler(async ({ data: slug }) => {
     try {
-      const posts = await dbQuery(`SELECT * FROM blog_posts WHERE slug = '${slug}'`);
+      const posts = await dbQuery("SELECT * FROM blog_posts WHERE slug = ?", [slug]);
       return posts.length > 0 ? posts[0] : null;
     } catch (error) {
       console.error("Error fetching post:", error);
@@ -31,7 +23,7 @@ export const Route = createFileRoute("/blog/$slug")({
     const post = await getBlogPost({ data: params.slug });
     if (!post) throw new Error("Post not found");
     return {
-      businessName: await getBusinessName(),
+      businessName: await getBusinessNameFn(),
       post,
     };
   },

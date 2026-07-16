@@ -1,25 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { readFile } from "node:fs/promises";
 import { Navbar } from "../components/Navbar";
 import { ContactForm } from "../components/ContactForm";
 import { incrementPageView } from "../utils/api";
+import { getBusinessName } from "../utils/db";
 
 // Read business name
-const getBusinessName = createServerFn({ method: "GET" }).handler(async () => {
-  try {
-    const cfg = JSON.parse(await readFile("site.json", "utf8")) as {
-      businessName?: string;
-    };
-    return cfg.businessName?.trim() ?? "Reply AI";
-  } catch {
-    return "Reply AI";
-  }
+const getBusinessNameFn = createServerFn({ method: "GET" }).handler(async () => {
+  return getBusinessName();
 });
 
 export const Route = createFileRoute("/")({
   loader: async () => {
-    const businessName = await getBusinessName();
+    const businessName = await getBusinessNameFn();
     // Non-blocking analytics increment
     incrementPageView({ data: "/" }).catch(() => {});
     return businessName;
@@ -45,13 +38,13 @@ function Home() {
       <Navbar businessName={businessName} />
 
       {/* Hero */}
-      <section className="relative pt-20 pb-32 overflow-hidden">
+      <section className="relative pt-16 sm:pt-20 pb-20 sm:pb-32 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-8">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-extrabold tracking-tight text-slate-900 mb-6 sm:mb-8">
               Stop Losing 40% of Your Leads. <span className="text-indigo-600">Start Converting Every Inquiry.</span>
             </h1>
-            <p className="text-xl text-slate-600 mb-10 leading-relaxed max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-slate-600 mb-8 sm:mb-10 leading-relaxed max-w-2xl mx-auto">
               Local businesses lose up to 40% of leads when they don't respond within 5 minutes. We fix that with AI that answers instantly and books appointments 24/7.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -72,13 +65,13 @@ function Home() {
       </section>
 
       {/* Services */}
-      <section id="services" className="py-24 bg-slate-50">
+      <section id="services" className="py-16 sm:py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything You Need to Grow</h2>
-            <p className="text-slate-600">Automate your customer journey from first touch to booked appointment.</p>
+          <div className="text-center mb-10 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">Everything You Need to Grow</h2>
+            <p className="text-sm sm:text-base text-slate-600">Automate your customer journey from first touch to booked appointment.</p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             <ServiceCard
               title="AI Chatbot & Instant Reply"
               description="Never miss a message again. Our AI handles inquiries on your website 24/7."
@@ -114,13 +107,13 @@ function Home() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-24">
+      <section id="how-it-works" className="py-16 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Simple Process</h2>
-            <p className="text-slate-600">How we get your AI systems up and running in days, not months.</p>
+          <div className="text-center mb-10 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">Our Simple Process</h2>
+            <p className="text-sm sm:text-base text-slate-600">How we get your AI systems up and running in days, not months.</p>
           </div>
-          <div className="grid md:grid-cols-3 gap-12">
+          <div className="grid gap-10 sm:gap-12 md:grid-cols-3">
             <Step number="01" title="Discover & Plan" description="We analyze your current lead flow and design a custom AI strategy for your business." />
             <Step number="02" title="Build & Integrate" description="Our team builds your AI agents and integrates them seamlessly with your existing tools." />
             <Step number="03" title="Launch & Grow" description="We launch your systems and provide ongoing optimization to maximize your ROI." />
@@ -129,13 +122,13 @@ function Home() {
       </section>
 
       {/* Industries */}
-      <section className="py-24 bg-indigo-900 text-white">
+      <section className="py-16 sm:py-24 bg-indigo-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Industries We Serve</h2>
-            <p className="text-indigo-200">Tailored AI solutions for high-intent service businesses.</p>
+          <div className="text-center mb-10 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">Industries We Serve</h2>
+            <p className="text-sm sm:text-base text-indigo-200">Tailored AI solutions for high-intent service businesses.</p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
             {[
               { name: 'Plumbers', to: '/industries/plumbers' },
               { name: 'HVAC', to: '/industries/hvac' },
@@ -155,14 +148,14 @@ function Home() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-24 bg-slate-50">
+      <section id="pricing" className="py-16 sm:py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Transparent Pricing</h2>
-            <p className="text-slate-600">Investment that pays for itself in captured leads.</p>
+          <div className="text-center mb-10 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">Transparent Pricing</h2>
+            <p className="text-sm sm:text-base text-slate-600">Investment that pays for itself in captured leads.</p>
           </div>
-          <div className="max-w-3xl mx-auto grid md:grid-cols-2 gap-8">
-            <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+          <div className="max-w-3xl mx-auto grid md:grid-cols-2 gap-6 sm:gap-8">
+            <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200">
               <h3 className="text-xl font-bold mb-2">Setup & Launch</h3>
               <div className="text-4xl font-bold text-indigo-600 mb-6">$1,500 – $3,500</div>
               <ul className="space-y-3 text-slate-600 mb-8 text-sm">
@@ -172,7 +165,7 @@ function Home() {
                 <li className="flex gap-2">✓ Workflow Automation</li>
               </ul>
             </div>
-            <div className="bg-indigo-600 p-8 rounded-2xl shadow-xl text-white transform md:scale-105">
+            <div className="bg-indigo-600 p-6 sm:p-8 rounded-2xl shadow-xl text-white md:scale-105">
               <h3 className="text-xl font-bold mb-2">Managed AI Service</h3>
               <div className="text-4xl font-bold mb-6">$500 – $1,500<span className="text-lg font-normal text-indigo-200">/mo</span></div>
               <ul className="space-y-3 text-indigo-100 mb-8 text-sm">
@@ -187,10 +180,10 @@ function Home() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-24 bg-slate-50/50">
+      <section className="py-16 sm:py-24 bg-slate-50/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Case Studies</h2>
-          <p className="text-slate-600 max-w-2xl mx-auto">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">Case Studies</h2>
+          <p className="text-sm sm:text-base text-slate-600 max-w-2xl mx-auto">
             We are currently onboarding our first cohort of local service businesses. Real client success stories and performance data will be published here as they become available.
           </p>
           <div className="mt-8 inline-block px-6 py-3 bg-indigo-50 text-indigo-700 rounded-xl font-medium">
@@ -200,11 +193,11 @@ function Home() {
       </section>
 
       {/* FAQ */}
-      <section className="py-24 bg-white">
+      <section className="py-16 sm:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Frequently Asked Questions</h2>
-            <p className="text-slate-600">Everything you need to know about our AI lead conversion systems.</p>
+          <div className="text-center mb-10 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 sm:mb-4">Frequently Asked Questions</h2>
+            <p className="text-sm sm:text-base text-slate-600">Everything you need to know about our AI lead conversion systems.</p>
           </div>
           <div className="max-w-3xl mx-auto space-y-6">
             <FAQItem
@@ -228,12 +221,12 @@ function Home() {
       </section>
 
       {/* Contact Form */}
-      <section id="contact" className="py-24 bg-slate-900 text-white">
+      <section id="contact" className="py-16 sm:py-24 bg-slate-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-10 sm:gap-16 items-center">
             <div>
-              <h2 className="text-4xl font-bold mb-6">Ready to scale your business with AI?</h2>
-              <p className="text-slate-400 text-lg mb-8">
+              <h2 className="text-3xl sm:text-4xl font-bold mb-4 sm:mb-6">Ready to scale your business with AI?</h2>
+              <p className="text-slate-400 text-base sm:text-lg mb-6 sm:mb-8">
                 Book a free consultation call and we'll show you exactly how much revenue you're leaving on the table.
               </p>
               <div className="space-y-4">
@@ -257,9 +250,9 @@ function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 bg-slate-900 border-t border-slate-800 text-slate-500">
+      <footer className="py-10 sm:py-12 bg-slate-900 border-t border-slate-800 text-slate-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6 sm:gap-8">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center">
                 <div className="w-3 h-3 bg-white rounded-sm rotate-45" />
@@ -294,7 +287,7 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 
 function ServiceCard({ title, description, icon }: { title: string; description: string; icon: React.ReactNode }) {
   return (
-    <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+    <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
       <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-6">
         <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           {icon}
@@ -308,11 +301,11 @@ function ServiceCard({ title, description, icon }: { title: string; description:
 
 function Step({ number, title, description }: { number: string; title: string; description: string }) {
   return (
-    <div className="relative">
-      <div className="text-6xl font-black text-slate-100 absolute -top-8 -left-4 z-0">{number}</div>
+    <div className="relative text-center md:text-left">
+      <div className="text-5xl sm:text-6xl font-black text-slate-100 absolute -top-6 -left-4 md:-top-8 md:-left-4 z-0">{number}</div>
       <div className="relative z-10">
-        <h3 className="text-xl font-bold mb-3">{title}</h3>
-        <p className="text-slate-600">{description}</p>
+        <h3 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3">{title}</h3>
+        <p className="text-sm sm:text-base text-slate-600">{description}</p>
       </div>
     </div>
   );

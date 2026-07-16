@@ -1,17 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { readFile } from "node:fs/promises";
-import { dbQuery } from "../../utils/db";
+import { dbQuery, getBusinessName } from "../../utils/db";
 
-const getBusinessName = createServerFn({ method: "GET" }).handler(async () => {
-  try {
-    const cfg = JSON.parse(await readFile("site.json", "utf8")) as {
-      businessName?: string;
-    };
-    return cfg.businessName?.trim() ?? "Reply AI";
-  } catch {
-    return "Reply AI";
-  }
+const getBusinessNameFn = createServerFn({ method: "GET" }).handler(async () => {
+  return getBusinessName();
 });
 
 const getBlogPosts = createServerFn({ method: "GET" }).handler(async () => {
@@ -27,7 +19,7 @@ const getBlogPosts = createServerFn({ method: "GET" }).handler(async () => {
 export const Route = createFileRoute("/blog/")({
   loader: async () => {
     return {
-      businessName: await getBusinessName(),
+      businessName: await getBusinessNameFn(),
       posts: await getBlogPosts(),
     };
   },
