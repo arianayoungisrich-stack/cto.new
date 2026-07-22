@@ -2,6 +2,7 @@ import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { dbQuery } from "../utils/db";
+import { generateProposal } from "../utils/ai";
 
 const getDashboardData = createServerFn({ method: "GET" }).handler(async () => {
   try {
@@ -163,22 +164,34 @@ function AdminDashboard() {
 
   const handleGenerateProposal = async (lead: any) => {
     setIsProcessing(true);
-    const content = JSON.stringify({
-        businessName: lead.business_name,
-        painPoints: "High lead leakage, slow manual response times, inconsistent follow-up.",
-        recommendedSolutions: [
-            "AI Chatbot for 24/7 instant inquiry handling",
-            "Automated Appointment Booking synced with calendar",
-            "Missed-Call Text-Back to capture every mobile lead"
-        ],
-        pricing: {
-            setup: "$1,500 - $3,500",
-            monthly: "$500 - $1,500/mo"
-        },
-        timeline: "14 days to full integration and launch."
-    }, null, 2);
 
     try {
+        // Generate AI-powered proposal
+        const aiProposal = await generateProposal({
+          data: {
+            businessName: lead.business_name || "",
+            ownerName: lead.owner_name || "",
+            industry: lead.industry || "",
+            message: lead.personalization_notes || "",
+            leadScore: lead.lead_score || 0,
+          },
+        });
+
+        const content = aiProposal || JSON.stringify({
+            businessName: lead.business_name,
+            painPoints: "High lead leakage, slow manual response times, inconsistent follow-up.",
+            recommendedSolutions: [
+                "AI Chatbot for 24/7 instant inquiry handling",
+                "Automated Appointment Booking synced with calendar",
+                "Missed-Call Text-Back to capture every mobile lead"
+            ],
+            pricing: {
+                setup: "$1,500 - $3,500",
+                monthly: "$500 - $1,500/mo"
+            },
+            timeline: "14 days to full integration and launch."
+        }, null, 2);
+
         const res = await saveProposal({ data: { leadId: lead.id, content } });
         if (res.success) {
             await router.invalidate();
@@ -313,10 +326,24 @@ function AdminDashboard() {
                                         <div key={lead.id} className="bg-white p-3 rounded-lg shadow-sm border border-slate-200 text-sm">
                                             <div className="font-bold text-slate-900 mb-1">{lead.business_name}</div>
                                             <div className="text-xs text-slate-500 mb-2">{lead.owner_name}</div>
+                                            {lead.ai_qualification_summary && (
+                                                <div className="text-[10px] text-slate-600 mb-2 leading-tight italic border-l-2 border-indigo-300 pl-1.5">
+                                                    {lead.ai_qualification_summary}
+                                                </div>
+                                            )}
                                             <div className="flex justify-between items-center">
                                                 <span className={`text-[10px] px-1.5 py-0.5 rounded ${lead.lead_score > 50 ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
                                                     Score: {lead.lead_score}
                                                 </span>
+                                                {lead.ai_next_action && (
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                                        lead.ai_next_action === 'call immediately' ? 'bg-red-100 text-red-700' :
+                                                        lead.ai_next_action === 'email first' ? 'bg-blue-100 text-blue-700' :
+                                                        'bg-slate-100 text-slate-600'
+                                                    }`}>
+                                                        {lead.ai_next_action}
+                                                    </span>
+                                                )}
                                                 {lead.call_scheduled && (
                                                     <span title="Call Scheduled" className="text-indigo-600">
                                                         <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"></path></svg>
@@ -420,8 +447,28 @@ function AdminDashboard() {
                             </div>
                             <div className="grid md:grid-cols-2 gap-6">
                                 <div className="bg-slate-50 p-4 rounded-lg border border-slate-100">
-                                    <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">Personalization Notes</h4>
-                                    <p className="text-sm text-slate-700 italic">"{lead.personalization_notes || 'No notes available'}"</p>
+                                    <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">AI Qualification</h4>
+                                    {lead.ai_qualification_summary ? (
+                                        <>
+                                            <p className="text-sm text-slate-700 italic mb-2">"{lead.ai_qualification_summary}"</p>
+                                            <div className="flex gap-2 items-center">
+                                                <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${lead.lead_score > 50 ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600'}`}>
+                                                    Score: {lead.lead_score}/100
+                                                </span>
+                                                {lead.ai_next_action && (
+                                                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${
+                                                        lead.ai_next_action === 'call immediately' ? 'bg-red-100 text-red-700' :
+                                                        lead.ai_next_action === 'email first' ? 'bg-blue-100 text-blue-700' :
+                                                        'bg-slate-100 text-slate-600'
+                                                    }`}>
+                                                        {lead.ai_next_action}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <p className="text-sm text-slate-700 italic">"{lead.personalization_notes || 'No notes available'}"</p>
+                                    )}
                                 </div>
                                 <div className="bg-indigo-50/50 p-4 rounded-lg border border-indigo-100">
                                     <h4 className="text-xs font-bold text-indigo-400 uppercase mb-2">Drafted Outreach</h4>

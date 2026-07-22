@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { dbQuery } from "./db";
+import { qualifyLead } from "./ai";
 
 export const submitContact = createServerFn({ method: "POST" })
   .validator((data: any) => data)
@@ -22,6 +23,38 @@ export const submitContact = createServerFn({ method: "POST" })
       if (newLead) {
         const pipelineSql = "INSERT INTO sales_pipeline (lead_id, stage) VALUES (?, 'new')";
         await dbQuery(pipelineSql, [newLead.id]);
+        
+        // Run AI lead qualification in the background (don't block the response)
+        qualifyLead({
+          data: {
+            businessName: business || "",
+            ownerName: name || "",
+            message: message || "",
+            source: "website",
+          },
+        }).then(async (qualification) => {
+          if (qualification) {
+            await dbQuery(
+              "UPDATE leads SET lead_score = ?, ai_qualification_summary = ?, ai_next_action = ?, status = ?, updated_at = datetime('now') WHERE id = ?",
+              [
+                qualification.score,
+                qualification.summary,
+                qualification.nextAction,
+                qualification.score >= 70 ? "qualified" : "inbound",
+                newLead.id,
+              ]
+            );
+            // Update pipeline stage if qualified
+            if (qualification.score >= 70) {
+              await dbQuery(
+                "UPDATE sales_pipeline SET stage = 'qualified', updated_at = datetime('now') WHERE lead_id = ?",
+                [newLead.id]
+              );
+            }
+          }
+        }).catch((err) => {
+          console.error("Background lead qualification failed:", err);
+        });
       }
       
       return { success: true };
