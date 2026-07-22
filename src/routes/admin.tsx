@@ -1,21 +1,20 @@
 import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { dbQuery } from "../utils/db";
 
 const getDashboardData = createServerFn({ method: "GET" }).handler(async () => {
-  const { execSync } = await import("node:child_process");
-  
   try {
-    const submissionsJson = execSync(`team-db "SELECT * FROM contact_submissions ORDER BY created_at DESC"`).toString();
-    const viewsJson = execSync(`team-db "SELECT * FROM page_views ORDER BY view_count DESC"`).toString();
-    const leadsJson = execSync(`team-db "SELECT l.*, p.stage, p.call_scheduled, p.proposal_sent, p.notes as pipeline_notes FROM leads l LEFT JOIN sales_pipeline p ON l.id = p.lead_id ORDER BY l.created_at DESC"`).toString();
-    const proposalsJson = execSync(`team-db "SELECT pr.*, l.business_name FROM proposals pr JOIN leads l ON pr.lead_id = l.id ORDER BY pr.created_at DESC"`).toString();
+    const submissions = await dbQuery("SELECT * FROM contact_submissions ORDER BY created_at DESC");
+    const views = await dbQuery("SELECT * FROM page_views ORDER BY view_count DESC");
+    const leads = await dbQuery("SELECT l.*, p.stage, p.call_scheduled, p.proposal_sent, p.notes as pipeline_notes FROM leads l LEFT JOIN sales_pipeline p ON l.id = p.lead_id ORDER BY l.created_at DESC");
+    const proposals = await dbQuery("SELECT pr.*, l.business_name FROM proposals pr JOIN leads l ON pr.lead_id = l.id ORDER BY pr.created_at DESC");
     
     return {
-      submissions: JSON.parse(submissionsJson),
-      views: JSON.parse(viewsJson),
-      leads: JSON.parse(leadsJson),
-      proposals: JSON.parse(proposalsJson),
+      submissions,
+      views,
+      leads,
+      proposals,
       success: true
     };
   } catch (error) {
@@ -27,14 +26,12 @@ const getDashboardData = createServerFn({ method: "GET" }).handler(async () => {
 const saveProposal = createServerFn({ method: "POST" })
   .validator((data: { leadId: number; content: string }) => data)
   .handler(async ({ data }) => {
-    const { execSync } = await import("node:child_process");
-    const escape = (str: string) => str?.replace(/'/g, "''") ?? "";
-    const sql = `INSERT INTO proposals (lead_id, content) VALUES (${data.leadId}, '${escape(data.content)}')`;
-    const updateSql = `UPDATE sales_pipeline SET stage = 'proposal', proposal_sent = 1 WHERE lead_id = ${data.leadId}`;
+    const sql = "INSERT INTO proposals (lead_id, content) VALUES (?, ?)";
+    const updateSql = "UPDATE sales_pipeline SET stage = 'proposal', proposal_sent = 1 WHERE lead_id = ?";
     
     try {
-      execSync(`team-db "${sql}"`);
-      execSync(`team-db "${updateSql}"`);
+      await dbQuery(sql, [data.leadId, data.content]);
+      await dbQuery(updateSql, [data.leadId]);
       return { success: true };
     } catch (error) {
       console.error("Save proposal error:", error);
@@ -45,11 +42,10 @@ const saveProposal = createServerFn({ method: "POST" })
 const updateLeadStage = createServerFn({ method: "POST" })
   .validator((data: { leadId: number; stage: string }) => data)
   .handler(async ({ data }) => {
-    const { execSync } = await import("node:child_process");
-    const sql = `UPDATE sales_pipeline SET stage = '${data.stage}', updated_at = datetime('now') WHERE lead_id = ${data.leadId}`;
+    const sql = "UPDATE sales_pipeline SET stage = ?, updated_at = datetime('now') WHERE lead_id = ?";
     
     try {
-      execSync(`team-db "${sql}"`);
+      await dbQuery(sql, [data.stage, data.leadId]);
       return { success: true };
     } catch (error) {
       console.error("Update lead stage error:", error);
@@ -73,6 +69,65 @@ function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<"overview" | "pipeline" | "proposals" | "outreach" | "analytics">("overview");
   const [outreachFilter, setOutreachFilter] = useState<string>("all");
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("admin_auth") === "true";
+    }
+    return false;
+  });
+  const [passwordInput, setPasswordInput] = useState("");
+  const [authError, setAuthError] = useState("");
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    const adminPassword = (import.meta as any).env?.VITE_ADMIN_PASSWORD || "replyai2026";
+    if (passwordInput === adminPassword) {
+      localStorage.setItem("admin_auth", "true");
+      setIsAuthenticated(true);
+      setAuthError("");
+    } else {
+      setAuthError("Incorrect password. Please try again.");
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-100 p-8">
+          <div className="text-center mb-8">
+            <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center text-indigo-600 mx-auto mb-4">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-slate-950">Admin Authentication</h2>
+            <p className="text-slate-500 mt-2">Enter the password to access the dashboard</p>
+          </div>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">Password</label>
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => setPasswordInput(e.target.value)}
+                className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:border-transparent outline-none"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            {authError && <p className="text-sm text-red-600 font-medium">{authError}</p>}
+            <button
+              type="submit"
+              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition-colors shadow-lg"
+            >
+              Sign In
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   if (!data.success) {
     return <div className="p-8 text-red-600">Error: {data.error}</div>;
@@ -146,17 +201,17 @@ function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8 font-sans">
+    <div className="min-h-screen bg-slate-50 p-4 sm:p-8 font-sans">
       <div className="max-w-7xl mx-auto">
-        <header className="mb-12 flex justify-between items-center border-b border-slate-200 pb-6">
+        <header className="mb-6 sm:mb-12 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-4 sm:pb-6">
           <div>
-            <h1 className="text-3xl font-bold text-indigo-600">Reply AI Admin Dashboard</h1>
-            <p className="text-slate-600">Manage leads and track performance</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-indigo-600">Admin Dashboard</h1>
+            <p className="text-sm sm:text-base text-slate-600">Manage leads and track performance</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
             <button 
                 onClick={downloadCSV}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm"
             >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
                 Export CSV
@@ -183,8 +238,8 @@ function AdminDashboard() {
 
         {activeTab === 'overview' && (
             <>
-                <div className="grid lg:grid-cols-3 gap-8 mb-12">
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 mb-8 sm:mb-12">
+                    <div className="bg-white p-4 sm:p-6 rounded-xl shadow-sm border border-slate-200">
                         <h3 className="text-sm font-medium text-slate-500 uppercase tracking-wider mb-2">Total Leads</h3>
                         <p className="text-4xl font-bold text-slate-900">{data.leads.length}</p>
                     </div>

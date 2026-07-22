@@ -1,23 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { readFile } from "node:fs/promises";
+import { dbQuery, getBusinessName } from "../../utils/db";
 
-const getBusinessName = createServerFn({ method: "GET" }).handler(async () => {
-  try {
-    const cfg = JSON.parse(await readFile("site.json", "utf8")) as {
-      businessName?: string;
-    };
-    return cfg.businessName?.trim() ?? "Reply AI";
-  } catch {
-    return "Reply AI";
-  }
+const getBusinessNameFn = createServerFn({ method: "GET" }).handler(async () => {
+  return getBusinessName();
 });
 
 const getBlogPosts = createServerFn({ method: "GET" }).handler(async () => {
-  const { execSync } = await import("node:child_process");
   try {
-    const result = execSync('team-db "SELECT id, title, slug, excerpt, author, published_at FROM blog_posts ORDER BY published_at DESC"').toString();
-    return JSON.parse(result) as any[];
+    const posts = await dbQuery("SELECT id, title, slug, excerpt, author, published_at FROM blog_posts ORDER BY published_at DESC");
+    return posts;
   } catch (error) {
     console.error("Error fetching posts:", error);
     return [];
@@ -27,7 +19,7 @@ const getBlogPosts = createServerFn({ method: "GET" }).handler(async () => {
 export const Route = createFileRoute("/blog/")({
   loader: async () => {
     return {
-      businessName: await getBusinessName(),
+      businessName: await getBusinessNameFn(),
       posts: await getBlogPosts(),
     };
   },
@@ -137,8 +129,8 @@ function BlogIndex() {
               <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
               <Link to="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
             </div>
-            <div className="text-sm">
-              Built with <a href="https://cto.new" className="underline hover:text-white">cto.new</a>
+            <div className="text-sm text-slate-600">
+              Converting leads into customers automatically.
             </div>
           </div>
           <div className="mt-8 text-center text-xs">
