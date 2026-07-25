@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// Feature flag: set to false to disable Gemini API calls entirely (uses fallback logic)
+const GEMINI_QUALIFICATION_ENABLED = false;
+
 function getGeminiClient(): GoogleGenerativeAI | null {
+  if (!GEMINI_QUALIFICATION_ENABLED) return null;
   const apiKey = process.env.GOOGLE_API_KEY;
   if (!apiKey) {
     console.error("GOOGLE_API_KEY is not set — AI features disabled.");
@@ -22,7 +26,17 @@ export const qualifyLead = createServerFn({ method: "POST" })
   .validator((data: { businessName: string; ownerName?: string; message: string; source?: string }) => data)
   .handler(async ({ data }): Promise<QualificationResult | null> => {
     const genAI = getGeminiClient();
-    if (!genAI) return null;
+    if (!genAI) {
+      // Return fallback qualification when Gemini is disabled
+      const hasMessage = data.message && data.message.length > 20;
+      return {
+        score: hasMessage ? 65 : 40,
+        summary: hasMessage
+          ? `${data.businessName || "Lead"} submitted a detailed inquiry via ${data.source || "website"}. Interest level appears genuine.`
+          : `${data.businessName || "Lead"} submitted a brief inquiry via ${data.source || "website"}. Needs further qualification.`,
+        nextAction: hasMessage ? "email first" : "low priority",
+      };
+    }
 
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
@@ -92,7 +106,49 @@ export const generateProposal = createServerFn({ method: "POST" })
   .validator((data: ProposalInput) => data)
   .handler(async ({ data }): Promise<string | null> => {
     const genAI = getGeminiClient();
-    if (!genAI) return null;
+    if (!genAI) {
+      // Return template-based proposal when Gemini is disabled
+      return `# AI Lead Conversion Proposal for ${data.businessName}
+
+## Hi${data.ownerName ? " " + data.ownerName : ""}!
+
+Thank you for your interest in Reply AI. Based on what you've shared about ${data.businessName}${data.industry ? " (" + data.industry + ")" : ""}, we've put together a custom proposal for how we can help you capture and convert more leads automatically.
+
+## Your Situation
+${data.message ? `> "${data.message}"\n\n` : ""}As a local business, you know that every inquiry is a potential customer. But following up manually means leads slip through the cracks — especially after hours, on weekends, or when you're busy serving clients.
+
+## Recommended Solutions
+
+### 1. AI Chatbot — 24/7 Lead Capture
+An intelligent chatbot on your website that answers questions instantly, qualifies leads, and captures contact info — even at 2 AM.
+
+### 2. Smart Lead Qualification
+Every lead is automatically scored and routed to the right person. Hot leads get immediate attention; tire-kickers get nurturing.
+
+### 3. Automated Follow-Up Sequences
+Email and SMS sequences that follow up with every lead automatically — no more forgotten follow-ups.
+
+## Investment
+
+| Item | Range |
+|------|-------|
+| One-time Setup | $1,500 – $3,500 |
+| Monthly Managed Service | $500 – $1,500/mo |
+
+*Exact pricing depends on your specific needs — we'll scope it during our strategy call.*
+
+## Timeline
+Most systems go live within **14 days** of our initial strategy session.
+
+## Next Step
+Ready to stop losing leads? Let's jump on a quick 20-minute strategy call to go over your specific needs. 
+
+📧 **hello@replyai.agency**
+🌐 **replyai.agency**
+
+---
+*Proposal generated for ${data.businessName} — ${new Date().toLocaleDateString()}*`;
+    }
 
     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
