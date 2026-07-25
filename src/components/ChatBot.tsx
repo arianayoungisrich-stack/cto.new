@@ -115,9 +115,10 @@ export function ChatBot() {
       {/* Chat window */}
       <div
         className={`fixed bottom-20 sm:bottom-24 right-4 sm:right-6 z-[9998] w-[calc(100vw-2rem)] sm:w-[380px] bg-white rounded-2xl shadow-2xl border border-slate-100 flex flex-col transition-all duration-300 origin-bottom-right ${
-          isOpen ? "opacity-100 scale-100 translate-y-0 visible" : "opacity-0 scale-95 translate-y-4 pointer-events-none invisible"
+          isOpen ? "opacity-100 scale-100 translate-y-0" : "opacity-0 scale-95 translate-y-4 pointer-events-none"
         }`}
         style={{ maxHeight: "min(560px, calc(100vh - 120px))" }}
+        inert={!isOpen ? "" : undefined}
       >
         {/* Header */}
         <div className="flex items-center gap-3 px-5 py-4 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white rounded-t-2xl shrink-0">
